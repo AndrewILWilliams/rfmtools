@@ -16,3 +16,4 @@ def read_spec ( filename ):
             wno = dat[:,0]
             spc = dat[:,1]
     return wno, spc
+
