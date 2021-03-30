@@ -1,0 +1,16 @@
+name: rfm
+channels:
+  - conda-forge
+dependencies:
+  - python=3.7
+  - jupyter
+  - jupyterlab
+  - ipykernel
+  - xarray=0.16.0
+  - climlab
+  - numpy
+  - seaborn
+  - scipy
+  - dask
+  - netcdf4
+  - matplotlib=3.3.3
