@@ -8,8 +8,6 @@ fields to input into RFM.
 import numpy as np
 import climlab
 import xarray as xr
-from .atm_phys import pseudoadiabat, qsat
-
 
 def _get_height_array(htop=60e3, dz=200):
     """
@@ -19,7 +17,7 @@ def _get_height_array(htop=60e3, dz=200):
     return np.arange(0, htop, dz)
 
 
-def _get_h2o_profile_dilute(temp=None, pres=None, RH=0.8, Tstrat=200):
+def _get_h2o_profile_dilute(temp=None, pres=None, RH=0.8, Tstrat=200, ptrop=None):
     """
     Calculate 
     q = RH*qsat is only valid if water vapor is dilute!
@@ -28,19 +26,23 @@ def _get_h2o_profile_dilute(temp=None, pres=None, RH=0.8, Tstrat=200):
     """
     q_base = RH*climlab.utils.thermo.qsat(temp, pres)
 
-    # use interpolation to find p_trop, where T=Tstrat. Then compute q at that level.
-    from scipy import interpolate
-    p_trop = interpolate.interp1d(temp, pres)(Tstrat)
-    q_trop = RH*climlab.utils.thermo.qsat(Tstrat,p_trop)
+    if ptrop is not None:
+        q_trop = RH*climlab.utils.thermo.qsat(Tstrat,ptrop)
+        mask = (pres<=ptrop)
+        q = q_base
+        q[mask] = q_trop        
+        return q
+    else:
+        return q_base
     
-    mask = (pres<=p_trop)
     
-    q = q_base
-    q[mask] = q_trop        
-    return q
+def _specific_humidity_to_ppmv(q, pres):
+    wvp = climlab.utils.thermo.vapor_pressure_from_specific_humidity(pres, q)
+    ppmv = np.divide(wvp, pres-wvp)*1e6
+    return ppmv
 
 
-def _get_temp_q_pres_from_height(height_array=None, Ts=300, Tstrat=200, ps=1e3, RH=0.8):
+def _get_temp_h2o_pres_from_height(height_array=None, Ts=300, Tstrat=200, ps=1e3, RH=0.8):
     """
     Generate idealized temperature, q and pressure arrays from height, 
     by integrating along moist adiabat assuming 
@@ -67,28 +69,40 @@ def _get_temp_q_pres_from_height(height_array=None, Ts=300, Tstrat=200, ps=1e3, 
     dz = (height_array[1]-height_array[0]) # m, assumed constant
     
     # Initialize arrays
-    temp = np.zeros(len(height_arr))
-    pres = np.zeros(len(height_arr))
+    temp = np.zeros(len(height_array))
+    pres = np.zeros(len(height_array))
 
     temp[0] = Ts
     pres[0] = ps
     
     # Iterative solution
-    for h_idx, height in enumerate(height_arr[:-1]):
-        temp[h_idx+1] = temp[h_idx] - climlab.utils.thermo.pseudoadiabat(temp[h_idx], pres[h_idx])*(np.divide(g*pres[h_idx], params.R_a*temp[h_idx]))*dz
+    trop_idx = 0
+    for h_idx, height in enumerate(height_array[:-1]):
+        temp[h_idx+1] = temp[h_idx] - moist_adiabat(temp[h_idx], pres[h_idx])*(np.divide(g*pres[h_idx], params.R_a*temp[h_idx]))*dz
         pres[h_idx+1] = pres[h_idx] - g*np.divide(dz*pres[h_idx], params.R_a*temp[h_idx])
-    
-    # Calculate idealized profiles of temp, q
-    # use interpolation to find p_trop, where T=Tstrat. Then compute q at that level.
-    from scipy import interpolate
-    p_trop = interpolate.interp1d(temp, pres)(Tstrat)
-    mask = (pres<=p_trop)
+        
+        if temp[h_idx]>Tstrat:
+            temp[h_idx+1] = temp[h_idx] - moist_adiabat(temp[h_idx], pres[h_idx])*(np.divide(g*pres[h_idx], params.R_a*temp[h_idx]))*dz
+            pres[h_idx+1] = pres[h_idx] - g*np.divide(dz*pres[h_idx], params.R_a*temp[h_idx])
+        else:
+            if trop_idx==0:
+                ptrop = pres[h_idx]
+                trop_idx+=1
+                
+            temp[h_idx+1] = Tstrat
+            pres[h_idx+1] = pres[h_idx] - g*np.divide(dz*pres[h_idx], params.R_a*Tstrat)
+        
+        
+    # Calculate idealized temp profile
+    mask = (pres<=ptrop)
     
     T = temp
     T[mask] = Tstrat
 
-    # Idealized specific humidity profile
-    q = _get_h2o_profile_dilute(temp, pres, RH, Tstrat)
+    ## Idealized specific humidity profile
+    q = _get_h2o_profile_dilute(temp, pres, RH, Tstrat, ptrop=ptrop)
     
-    return T, q, pres
+    # Convert to ppmv h2o, as required by RFM
+    ppmv = _specific_humidity_to_ppmv(q, pres)
+    return T, ppmv, pres
 
