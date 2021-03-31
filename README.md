@@ -17,3 +17,8 @@ An `environment.yml` file is provided from which you can generate an `rfm` envir
 
 To add this environment to you `jupyter lab` instance, you must first activate this environment and then run `ipython kernel install --user --name=rfm`.
 
+#### RFM
+
+To install the RFM, follow the instructions here: http://eodg.atm.ox.ac.uk/RFM/ 
+
+This code has only been tested for v5.10_23MAY20 of the RFM.
