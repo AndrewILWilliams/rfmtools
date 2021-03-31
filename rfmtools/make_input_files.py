@@ -32,15 +32,16 @@ def generate_atm_file(fname, height, temp, pres, h2o, co2):
         file.write(f" {nz} ! No.Levels in profiles \n")
         
         for idx, label in enumerate(labels):
-            file.write(f" {label} \n")
+            file.write(f"{label} \n")
             x=",       ".join([str(i) for i in variables[idx]])
             file.write(f" {x} \n")
         file.write("*END")
     file.close()
         
         
-def make_driver( 
-    flags="RAD FLX OPT VRT SFC",
+def make_driver(
+    runtype='radiance',
+    extra_flags=None,
     fname=None, atmfile=None, 
     SPC="0.1 3500 0.1",
     GAS="CO2 H2O",
@@ -51,12 +52,19 @@ def make_driver(
     Depending on `genre`, we'll expect a certain number of flags to be present...
     Maybe make flags an input LIST???
     
-    * genre: (str)
-         'optical_depth', 'cooling_rate' or 'flx' ?
+    * runtype: 'optical_depth' or 'radiance'
+        sets the default flags
+    
+    * extra_flags: (`str`)
+        For setting additional flags, e.g. 'CTM'
          
     """
     import os
-    
+    if runtype=='radiance':
+        flags="RAD FLX SFC"
+    elif runtype=='optical_depth':
+        flags="OPT"
+        
     if fname is None:
         raise ValueError("Need to specify a filename, `fname`.") 
         

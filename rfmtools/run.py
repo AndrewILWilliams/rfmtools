@@ -13,7 +13,8 @@ import subprocess
 from .utils import RFM_DIR 
 
 
-def run
+def run():
+    return 1
 
 
 
