@@ -1,5 +1,7 @@
 import numpy as np
 
+RFM_DIR = "/gws/nopw/j04/aopp/andreww/side_projects/RFM"
+
 def read_spec ( filename ):
     with open(filename) as f:
         rec = '!'
