@@ -8,6 +8,7 @@ fields to input into RFM.
 import numpy as np
 import climlab
 import xarray as xr
+from .constants import R_a, g 
 
 def _get_height_array(htop=60e3, dz=200):
     """
@@ -78,19 +79,19 @@ def _get_temp_h2o_pres_from_height(height_array=None, Ts=300, Tstrat=200, ps=1e3
     # Iterative solution
     trop_idx = 0
     for h_idx, height in enumerate(height_array[:-1]):
-        temp[h_idx+1] = temp[h_idx] - moist_adiabat(temp[h_idx], pres[h_idx])*(np.divide(g*pres[h_idx], params.R_a*temp[h_idx]))*dz
-        pres[h_idx+1] = pres[h_idx] - g*np.divide(dz*pres[h_idx], params.R_a*temp[h_idx])
+        temp[h_idx+1] = temp[h_idx] - climlab.utils.thermo.pseudoadiabat(temp[h_idx], pres[h_idx])*(np.divide(g*pres[h_idx], R_a*temp[h_idx]))*dz
+        pres[h_idx+1] = pres[h_idx] - g*np.divide(dz*pres[h_idx], R_a*temp[h_idx])
         
         if temp[h_idx]>Tstrat:
-            temp[h_idx+1] = temp[h_idx] - moist_adiabat(temp[h_idx], pres[h_idx])*(np.divide(g*pres[h_idx], params.R_a*temp[h_idx]))*dz
-            pres[h_idx+1] = pres[h_idx] - g*np.divide(dz*pres[h_idx], params.R_a*temp[h_idx])
+            temp[h_idx+1] = temp[h_idx] - climlab.utils.thermo.pseudoadiabat(temp[h_idx], pres[h_idx])*(np.divide(g*pres[h_idx], R_a*temp[h_idx]))*dz
+            pres[h_idx+1] = pres[h_idx] - g*np.divide(dz*pres[h_idx], R_a*temp[h_idx])
         else:
             if trop_idx==0:
                 ptrop = pres[h_idx]
                 trop_idx+=1
                 
             temp[h_idx+1] = Tstrat
-            pres[h_idx+1] = pres[h_idx] - g*np.divide(dz*pres[h_idx], params.R_a*Tstrat)
+            pres[h_idx+1] = pres[h_idx] - g*np.divide(dz*pres[h_idx], R_a*Tstrat)
         
         
     # Calculate idealized temp profile
