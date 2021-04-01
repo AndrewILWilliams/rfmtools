@@ -9,7 +9,7 @@ import numpy as np
 import climlab
 import xarray as xr
 from .utils import RFM_DIR 
-
+import time
 
 def generate_atm_file(fname, height, temp, pres, h2o, co2):
     """
@@ -47,7 +47,8 @@ def make_driver(
     GAS="CO2 H2O",
     HIT=None,
     HDR=None,
-    OUTDIR=None):
+    OUTDIR=None,
+    NLEV=None):
     """
     Depending on `genre`, we'll expect a certain number of flags to be present...
     Maybe make flags an input LIST???
@@ -84,15 +85,31 @@ def make_driver(
         HDR="AW2021: RFM"
     
     if OUTDIR is None:
-        OUTDIR="OUTDIR = "+RFM_DIR+"/outp/"
+        stamp = time.time()*1e5
+        x = RFM_DIR+"/outp/"+"tmp_%.0f/" % stamp
+        OUTDIR="  OUTDIR = "+x # create a unique tmp dir
+        os.mkdir(x)
     
+    if NLEV is None:
+        fp = open(atmfile)
+        for i, line in enumerate(fp):
+            if line[0:9]=='*PRE [mb]':
+                LEV_idx = i-1
+            else:
+                continue
+        fp.close()
+
+        fp = open(atmfile)
+        LEV = fp.readlines()[LEV_idx].split()[-1]
+        
+    # Make flags!
     labels={}
     labels["*HDR"] = HDR
     labels["*FLG"] = flags
     labels["*SPC"] = SPC
     labels["*GAS"] = GAS
     labels["*ATM"] = atmfile
-    labels["*TAN"] = "1.0" # vertical path; http://eodg.atm.ox.ac.uk/RFM/sum/zenflg.html
+    labels["*LEV"] = LEV
     labels["*HIT"] = HIT
     labels["*OUT"] = OUTDIR
     
