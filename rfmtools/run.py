@@ -12,7 +12,7 @@ import subprocess
 import io
 import os
 from .utils import RFM_DIR, read_spec
-
+import glob
 
 def run(drv_file = None, clean_files = False):
     """
@@ -46,8 +46,8 @@ def run(drv_file = None, clean_files = False):
 
     fp = open(drv_file)
     parsed_outdir = fp.readlines()[OUT_idx].split()[-1]
-    
-    nu,_ = read_spec(parsed_outdir+"*")
+   
+    nu,_ = read_spec(glob.glob(parsed_outdir+"*asc*")[0])
 
     da = xr.DataArray(_, dims='wavenumber', coords={'wavenumber':nu})
     
