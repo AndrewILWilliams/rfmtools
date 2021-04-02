@@ -51,9 +51,16 @@ def run(drv_file = None, clean_files = False):
 
     da = xr.DataArray(_, dims='wavenumber', coords={'wavenumber':nu})
     
+    # Clean up temporary output folder
     if clean_files:
-        os.remove( parsed_outdir + '*')       # clean up tmp files
-        os.rmdir( tmp_dir )
+        print("Cleaning up temporary output files...")
+        # rmdir can only delete empty directories, so empty it first!
+        tmp_files = glob.glob(parsed_outdir+"*")
+        for file in tmp_files:
+            os.remove(file)
+           
+        # Now delete the directory.
+        os.rmdir(parsed_outdir)
         
     return da
 
