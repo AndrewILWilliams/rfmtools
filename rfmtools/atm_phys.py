@@ -31,3 +31,38 @@ def pseudoadiabat(T,p):
 
 def dry_adiabat(T,P):
     return np.divide(params.R_a, params.cp_a)
+
+
+def planck_wavenumber(nu,T):
+    """
+    Returns in W/m2/m
+    """
+    import scipy.constants
+    h = scipy.constants.h
+    pi = scipy.constants.pi
+    c = scipy.constants.c
+    kb = scipy.constants.Boltzmann
+    u = h*nu/(kb*T)
+    return 2.*pi*(kb*T)**3/((h*c)**2) * u**3/(np.exp(u)-1.)
+
+
+def planck_nu(n,T,unit="cm^-1"):
+    """
+    Based on Ray's book.
+    NOTE: Returns the radiance in W/m2/[length]
+    where [length] is the unit in which I'm measuring the spectral axis.
+
+    Conversion factor 'k' is necessary because Planck_wavenumber (above) returns
+    """
+    import scipy.constants
+    h = scipy.constants.h
+    c = scipy.constants.c
+    kb = scipy.constants.Boltzmann
+    if unit=="m^-1":
+        k = 1.
+    elif unit=="cm^-1":
+        n = n*100.
+        k = 100.
+    else:
+        print( "(planck_nu) Error: unit not recognized!")
+    return k*c*planck_wavenumber(n*c,T)
