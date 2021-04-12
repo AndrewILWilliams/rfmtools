@@ -116,7 +116,7 @@ def make_driver(
     # Main loop, to make .drv file
     with open(RFM_DIR+"/src/"+fname,"w+") as file:
         for idx, label in enumerate(labels.keys()):
-            print(label)
+            #print(label)
             file.write(f"{label} \n")
             file.write(f"  {labels[label]} \n")
             
